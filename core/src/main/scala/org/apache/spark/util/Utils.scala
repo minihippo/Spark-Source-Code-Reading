@@ -2592,6 +2592,7 @@ private[spark] object Utils extends Logging {
    * Returns a path of temporary file which is in the same directory with `path`.
    */
   def tempFileWith(path: File): File = {
+    //在path这个文件的路径下创建名为path.id的文件类
     new File(path.getAbsolutePath + "." + UUID.randomUUID())
   }
 

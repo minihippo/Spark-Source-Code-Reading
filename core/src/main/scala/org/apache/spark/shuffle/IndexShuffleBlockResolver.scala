@@ -138,7 +138,9 @@ private[spark] class IndexShuffleBlockResolver(
       mapId: Int,
       lengths: Array[Long],
       dataTmp: File): Unit = {
+    // 返回索引文件类
     val indexFile = getIndexFile(shuffleId, mapId)
+    // 创建索引文件的临时文件
     val indexTmp = Utils.tempFileWith(indexFile)
     try {
       val out = new DataOutputStream(new BufferedOutputStream(new FileOutputStream(indexTmp)))

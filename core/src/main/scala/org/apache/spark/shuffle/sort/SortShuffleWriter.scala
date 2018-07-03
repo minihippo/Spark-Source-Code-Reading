@@ -49,8 +49,10 @@ private[spark] class SortShuffleWriter[K, V, C](
 
   /** Write a bunch of records to this task's output */
   override def write(records: Iterator[Product2[K, V]]): Unit = {
+    //根据是否combine创建对应的externalSorter
     sorter = if (dep.mapSideCombine) {
       require(dep.aggregator.isDefined, "Map-side combine without Aggregator specified!")
+      //包含aggregator，并且要按key排序
       new ExternalSorter[K, V, C](
         context, dep.aggregator, Some(dep.partitioner), dep.keyOrdering, dep.serializer)
     } else {
@@ -60,16 +62,21 @@ private[spark] class SortShuffleWriter[K, V, C](
       new ExternalSorter[K, V, V](
         context, aggregator = None, Some(dep.partitioner), ordering = None, dep.serializer)
     }
+    //将rdd写入externalSort缓冲区，做一系列内存排序、spill的操作
     sorter.insertAll(records)
 
     // Don't bother including the time to open the merged output file in the shuffle write time,
     // because it just opens a single file, so is typically too fast to measure accurately
     // (see SPARK-3570).
+    //返回"shuffle_shuffleid_mapid.data"文件类
     val output = shuffleBlockResolver.getDataFile(dep.shuffleId, mapId)
+    //返回"shuffle_shuffleid_mapid.data.randomid"文件类  临时文件
     val tmp = Utils.tempFileWith(output)
     try {
       val blockId = ShuffleBlockId(dep.shuffleId, mapId, IndexShuffleBlockResolver.NOOP_REDUCE_ID)
+      //写入结果，返回每个partiton的长度
       val partitionLengths = sorter.writePartitionedFile(blockId, tmp)
+      //提交索引文件和数据文件
       shuffleBlockResolver.writeIndexFileAndCommit(dep.shuffleId, mapId, partitionLengths, tmp)
       mapStatus = MapStatus(blockManager.shuffleServerId, partitionLengths)
     } finally {
