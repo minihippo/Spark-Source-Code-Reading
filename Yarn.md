@@ -6,7 +6,7 @@ idea：一个全局的ResourceManager；每个应用一个applicationMaster
 
 ### architecture
 
-<img src='img/yarn/yarn架构.png', style='zoom:80%'>
+<img src="/img/yarn/yarn架构.png" style='zoom:80%' />
 
 - **ResourceManager**：为所有应用分配资源
 
